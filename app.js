@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const mongoose = require('mongoose');
 const winston = require('winston');
-const encrypt = require('mongoose-encryption');
+const md5 = require('md5');
 
 const app = express();
 const port = 3000;
@@ -47,12 +47,30 @@ const userSchema = new mongoose.Schema ({
     password: String,
 });
 
-userSchema.plugin(encrypt, { secret: process.env.SECRET, encryptedFields: ['password'] });
-
 const User = new mongoose.model('User', userSchema);
 
 app.get('/', function (req, res) {
     res.render('home');
+});
+
+app.get('/register', function (req, res) {
+    res.render('register');
+});
+
+app.post('/register', async function (req, res) {
+    try {
+        const { username, password } = req.body;
+        const newUser = new User({
+           email: username,
+           password: md5(password)
+        });
+        const addUser = await newUser.save();  
+        logger.info(`User: ${addUser} saved successfully`);
+        res.render('secrets');
+    } catch (error) {
+        logger.error('An error occurred:', error);
+        res.status(500).json({ error: error.message || 'Internal Server Error' });     
+    }
 });
 
 app.get('/login', function (req, res) {
@@ -65,7 +83,7 @@ app.post('/login', async function (req, res) {
         const foundUser = await User.findOne({ email: username });
 
         if (foundUser) {
-            const isPasswordCorrect = password === foundUser.password;
+            const isPasswordCorrect = (md5(password) === foundUser.password);
             
             if (isPasswordCorrect) {
                 logger.info(`User: ${foundUser.email} authenticated successfully`);
@@ -81,26 +99,6 @@ app.post('/login', async function (req, res) {
     } catch (error) {
         logger.error('An error occurred:', error);
         res.status(500).json({ error: error.message || 'Internal Server Error' });
-    }
-});
-
-app.get('/register', function (req, res) {
-    res.render('register');
-});
-
-app.post('/register', async function (req, res) {
-    try {
-        const { username, password } = req.body;
-        const newUser = new User({
-           email: username,
-           password: password 
-        });
-        const addUser = await newUser.save();  
-        logger.info(`User: ${addUser} saved successfully`);
-        res.render('secrets');
-    } catch (error) {
-        logger.error('An error occurred:', error);
-        res.status(500).json({ error: error.message || 'Internal Server Error' });     
     }
 });
 
