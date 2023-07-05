@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const mongoose = require('mongoose');
 const winston = require('winston');
+const encrypt = require('mongoose-encryption');
 
 const app = express();
 const port = 3000;
@@ -39,10 +40,13 @@ mongoose.connect('mongodb://127.0.0.1:27017/userDB', { useNewUrlParser: true, us
     logger.error('Failed to connect to MongoDB:', error);
   });
 
-const userSchema = {
+const userSchema = new mongoose.Schema ({
     email: String,
     password: String,
-};
+});
+
+const secret = 'Thisisoutlittlesecret.';
+userSchema.plugin(encrypt, { secret: secret, encryptedFields: ['password'] });
 
 const User = new mongoose.model('User', userSchema);
 
@@ -58,9 +62,6 @@ app.post('/login', async function (req, res) {
     try {
         const { username, password } = req.body;
         const foundUser = await User.findOne({ email: username });
-
-        logger.info(`Username: ${username}`);
-        logger.info(`Password: ${password}`);
 
         if (foundUser) {
             const isPasswordCorrect = password === foundUser.password;
