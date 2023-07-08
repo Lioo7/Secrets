@@ -1,4 +1,3 @@
-
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -6,7 +5,8 @@ const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const mongoose = require('mongoose');
 const winston = require('winston');
-const md5 = require('md5');
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 const app = express();
 const port = 3000;
@@ -60,18 +60,28 @@ app.get('/register', function (req, res) {
 app.post('/register', async function (req, res) {
     try {
         const { username, password } = req.body;
+
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
         const newUser = new User({
-           email: username,
-           password: md5(password)
+            email: username,
+            password: hashedPassword
         });
-        const addUser = await newUser.save();  
-        logger.info(`User: ${addUser} saved successfully`);
-        res.render('secrets');
+
+        try {
+            const addUser = await newUser.save();
+            logger.info(`User: ${addUser} saved successfully`);
+            res.render('secrets'); 
+        } catch (error) {
+            logger.error('An error occurred during user save:', error);
+            res.status(500).json({ error: error.message || 'Internal Server Error' });
+        }
     } catch (error) {
-        logger.error('An error occurred:', error);
-        res.status(500).json({ error: error.message || 'Internal Server Error' });     
+        logger.error('An error occurred during password hashing:', error);
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 });
+
 
 app.get('/login', function (req, res) {
     res.render('login');
@@ -83,17 +93,16 @@ app.post('/login', async function (req, res) {
         const foundUser = await User.findOne({ email: username });
 
         if (foundUser) {
-            const isPasswordCorrect = (md5(password) === foundUser.password);
-            
-            if (isPasswordCorrect) {
+            const result = await bcrypt.compare(password, foundUser.password);
+            if (result) {
                 logger.info(`User: ${foundUser.email} authenticated successfully`);
-                res.render('secrets'); 
+                res.render('secrets');
             } else {
                 logger.info(`User: ${foundUser.email} authentication failed (wrong password)`);
                 res.status(401).json({ error: 'Authentication failed' });
             }
         } else {
-            logger.error(`User authentication failed (wrong email)`);
+            logger.info(`User authentication failed (wrong email)`);
             res.status(401).json({ error: 'Authentication failed' });
         }
     } catch (error) {
