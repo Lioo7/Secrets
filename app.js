@@ -5,8 +5,9 @@ const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const mongoose = require('mongoose');
 const winston = require('winston');
-const bcrypt = require('bcrypt');
-const saltRounds = 10;
+const session = require('express-session');
+const passport = require('passport');
+const passportLocalMongoose = require('passport-local-mongoose');
 
 const app = express();
 const port = 3000;
@@ -33,6 +34,15 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
+app.use(session({
+    secret: process.env.SECRET,
+    resave: false,
+    saveUninitialized: false
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Database Connection
 mongoose.connect('mongodb://127.0.0.1:27017/userDB', { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
@@ -47,8 +57,16 @@ const userSchema = new mongoose.Schema ({
     password: String,
 });
 
+userSchema.plugin(passportLocalMongoose);
+
 const User = new mongoose.model('User', userSchema);
 
+passport.use(User.createStrategy());
+
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+// Routes
 app.get('/', function (req, res) {
     res.render('home');
 });
@@ -57,57 +75,62 @@ app.get('/register', function (req, res) {
     res.render('register');
 });
 
-app.post('/register', async function (req, res) {
-    try {
-        const { username, password } = req.body;
+app.post('/register', function (req, res) {
+    const {username, password} = req.body;
 
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-        const newUser = new User({
-            email: username,
-            password: hashedPassword
-        });
-
-        try {
-            const addUser = await newUser.save();
-            logger.info(`User: ${addUser} saved successfully`);
-            res.render('secrets'); 
-        } catch (error) {
-            logger.error('An error occurred during user save:', error);
-            res.status(500).json({ error: error.message || 'Internal Server Error' });
+    User.register({username: username, active: false}, password, function(err, user) {
+        if (err) {
+            logger.error('Error registering user:', err);
+            res.redirect('/register');
+        } else {
+            logger.info('User registered successfully');
+            passport.authenticate('local')(req, res, function(){
+                res.redirect('/secrets');
+            })
         }
-    } catch (error) {
-        logger.error('An error occurred during password hashing:', error);
-        res.status(500).json({ error: error.message || 'Internal Server Error' });
-    }
+    });
 });
-
 
 app.get('/login', function (req, res) {
     res.render('login');
 });
 
 app.post('/login', async function (req, res) {
-    try {
-        const { username, password } = req.body;
-        const foundUser = await User.findOne({ email: username });
+    const {username, password} = req.body;
+    const user = new User({
+        username: username,
+        password: password
+    });
 
-        if (foundUser) {
-            const result = await bcrypt.compare(password, foundUser.password);
-            if (result) {
-                logger.info(`User: ${foundUser.email} authenticated successfully`);
-                res.render('secrets');
-            } else {
-                logger.info(`User: ${foundUser.email} authentication failed (wrong password)`);
-                res.status(401).json({ error: 'Authentication failed' });
-            }
+    req.login(user, function(err) {
+        if (err) {
+            logger.error(err);
         } else {
-            logger.info(`User authentication failed (wrong email)`);
-            res.status(401).json({ error: 'Authentication failed' });
+            passport.authenticate('local')(req, res, function(){
+                res.redirect('/secrets');
+            });
         }
-    } catch (error) {
-        logger.error('An error occurred:', error);
-        res.status(500).json({ error: error.message || 'Internal Server Error' });
+    });
+});
+
+app.post('/logout', function(req, res){
+    req.logout(function(err) {
+      if (err) {
+        logger.error('logout failed', err) ;
+      } else {
+        logger.info('logout successful');
+        res.redirect('/');
+      }
+    });
+  });
+
+app.get('/secrets', function(req, res){
+    if (req.isAuthenticated()) {
+        logger.info('The user is authenticated')
+        res.render('secrets');
+    } else {
+        logger.error('The user is not authenticated');
+        res.redirect('/login');
     }
 });
 

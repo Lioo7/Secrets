@@ -14,3 +14,14 @@ body {
   color: #fff;
   background-color: #000;
 }
+
+.button-group {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.button-group button,
+.button-group a {
+  margin: 0 10px;
+}
