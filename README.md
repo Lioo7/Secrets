@@ -6,7 +6,7 @@
 [![Passport.js](https://img.shields.io/badge/Passport.js-%3E%3D%200.4.1-orange)](http://www.passportjs.org/)
 [![Google OAuth 2.0](https://img.shields.io/badge/Google%20OAuth%202.0-%3E%3D%202.0.0-yellow)](https://developers.google.com/identity/protocols/oauth2)
 
-**Description**: This project is a web application built with Node.js and Express that allows users to register, log in, and share secrets anonymously. It uses MongoDB as the database and implements authentication using Passport.js and the Google OAuth 2.0 strategy.
+**Description**: This project is a web application built with Node.js and Express that allows users to register, log in, and share secrets anonymously. It follows the MVC architecture, uses MongoDB as the database and implements authentication using Passport.js and the Google OAuth 2.0 strategy.
 
 ## Table of Contents
 
