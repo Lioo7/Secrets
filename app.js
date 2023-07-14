@@ -31,6 +31,9 @@ app.use('/', require('./routes/mainRoutes'));
 app.use('/auth', require('./routes/googleAuthRoutes'));
 
 // Start the server
-app.listen(port, () => {
+const server = app.listen(port, () => {
   logger.info(`Server started on port ${port}`);
 });
+
+module.exports = app;
+module.exports.server = server;
