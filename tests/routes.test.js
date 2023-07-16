@@ -1,28 +1,20 @@
 const request = require('supertest');
 const app = require('../app');
 const server = require('../app').server;
-const mongoose = require('mongoose');
+const database = require('../config/database');
 const logger = require('../config/logger');
 
 describe('Routes', () => {
 
   beforeAll(async () => {
-    try {
-      await mongoose.connect('mongodb://localhost:27017/testDB', {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        createDatabase: true // Automatically create the database if it doesn't exist
-      });
-      logger.info('Connected to MongoDB (testDB)');
-    } catch (error) {
-      logger.error('Failed to connect to MongoDB (testDB):', error);
-    }
+    // Connect to the separate test database
+    await database.connect(true);
   });
-  
 
   afterAll(async () => {
     // Close the database connection and server
-    await mongoose.connection.close();
+    await database.disconnect();
+    // Close the server after all tests are done
     server.close();
   });
 

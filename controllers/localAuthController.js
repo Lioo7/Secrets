@@ -11,7 +11,7 @@ exports.register = function(req, res) {
 
   // Input validation
   if (!username || !password) {
-    logger.error('Username or password is missing');
+    logger.error('Registry error: Username or password is missing');
     res.redirect('/register');
     return;
   }
@@ -38,7 +38,7 @@ exports.login = async function(req, res) {
 
   // Input validation
   if (!username || !password) {
-    logger.error('Username or password is missing');
+    logger.error('Login error: Username or password is missing');
     res.redirect('/login');
     return;
   }
