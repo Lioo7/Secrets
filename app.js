@@ -5,6 +5,7 @@ const session = require('express-session');
 const passport = require('./config/passport');
 const { connect } = require('./config/database');
 const logger = require('./config/logger');
+const util = require('util');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -23,8 +24,10 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Connect to the database
-connect();
+// Connect to the database only if case app.js file is being run directly
+if (require.main === module) {
+  connect('mongodb://localhost:27017/userDB');
+}
 
 // Routes
 app.use('/', require('./routes/mainRoutes'));
@@ -35,5 +38,4 @@ const server = app.listen(port, () => {
   logger.info(`Server started on port ${port}`);
 });
 
-module.exports = app;
-module.exports.server = server;
+module.exports = { app, server };

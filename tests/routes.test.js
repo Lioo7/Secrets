@@ -1,5 +1,4 @@
 const request = require('supertest');
-const app = require('../app');
 const server = require('../app').server;
 const database = require('../config/database');
 const logger = require('../config/logger');
@@ -7,7 +6,7 @@ const logger = require('../config/logger');
 describe('Routes', () => {
     beforeAll(async () => {
       // Connect to the separate test database
-      await database.connect(true);
+      await database.connect('mongodb://localhost:27017/testDB');
     });
   
     describe('GET /', () => {
