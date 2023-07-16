@@ -23,7 +23,7 @@ async function connect(testing = false) {
 
   try {
     // Create a new connection and store it in cachedConnection
-    cachedConnection = await mongoose.createConnection(dbUri, {
+    cachedConnection = await mongoose.connect(dbUri, {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });

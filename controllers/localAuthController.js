@@ -7,6 +7,7 @@ exports.registerForm = function(req, res) {
 };
 
 exports.register = function(req, res) {
+  logger.info('req.body:', req.body); 
   const { username, password } = req.body;
 
   // Input validation
