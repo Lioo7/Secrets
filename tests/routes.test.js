@@ -7,6 +7,8 @@ describe('Routes', () => {
     beforeAll(async () => {
       // Connect to the separate test database
       await database.connect('mongodb://localhost:27017/testDB');
+      // Clean up the database
+      await database.cleanupDatabase();
     });
   
     describe('GET /', () => {

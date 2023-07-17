@@ -21,7 +21,7 @@ async function connect(connectionString) {
 
 async function disconnect() {
   if (!isConnected) {
-    logger.info('No active MongoDB connection to disconnect from');
+    logger.error('No active MongoDB connection to disconnect from');
     return;
   }
 
@@ -36,4 +36,19 @@ async function disconnect() {
   }
 }
 
-module.exports = { connect, disconnect };
+async function cleanupDatabase() {
+  if (!isConnected) {
+    logger.error('No active MongoDB connection to clean up');
+    return;
+  }
+
+  try {
+    await connection.dropDatabase();
+    logger.info('Database cleaned up');
+  } catch (error) {
+    logger.error('Failed to clean up database:', error);
+    throw error;
+  }
+}
+
+module.exports = { connect, disconnect, cleanupDatabase };

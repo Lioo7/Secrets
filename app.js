@@ -5,7 +5,6 @@ const session = require('express-session');
 const passport = require('./config/passport');
 const { connect } = require('./config/database');
 const logger = require('./config/logger');
-const util = require('util');
 
 const app = express();
 const port = process.env.PORT || 3000;
