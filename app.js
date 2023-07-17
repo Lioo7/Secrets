@@ -26,7 +26,7 @@ app.use(passport.session());
 
 // Connect to the database only if case app.js file is being run directly
 if (require.main === module) {
-  connect('mongodb://localhost:27017/userDB');
+  connect(process.env.MONGODB_URI);
 }
 
 // Routes

@@ -7,7 +7,7 @@ const logger = require('../config/logger')
 beforeAll(async () => {
   logger.debug('beforeAll')
   // Connect to the separate test database
-  await database.connect('mongodb://localhost:27017/testDB')
+  await database.connect(process.env.TEST_MONGODB_URI)
   // Clean up the database
   await database.cleanupDatabase()
 })
