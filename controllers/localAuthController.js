@@ -7,7 +7,6 @@ exports.registerForm = function(req, res) {
 };
 
 exports.register = async function(req, res) {
-  logger.info('req.body:', req.body);
   const { username, password } = req.body;
 
   // Input validation
@@ -48,24 +47,30 @@ exports.login = async function(req, res) {
   // Input validation
   if (!username || !password) {
     logger.error('Login error: Username or password is missing');
-    res.redirect('/login');
+    res.status(401).redirect('/login');
     return;
   }
 
-  const user = new User({
-    username: username,
-    password: password
-  });
-
-  req.login(user, function(err) {
-    if (err) {
-      logger.error(err);
-    } else {
-      passport.authenticate('local')(req, res, function() {
-        res.redirect('/secrets');
-      });
-    }
-  });
+  try {
+    const user = new User({
+      username: username,
+      password: password
+    });
+  
+    req.login(user, function(err) {
+      if (err) {
+        logger.error('Error during login:', err);
+        res.status(401).redirect('/login');
+      } else {
+        passport.authenticate('local')(req, res, function() {
+          res.redirect('/secrets');
+        });
+      }
+    });
+  } catch (error) {
+    logger.error('Error during login:', error);
+    res.status(401).redirect('/login');
+  }
 };
 
 exports.logout = function(req, res) {
