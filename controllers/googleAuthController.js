@@ -1,15 +1,13 @@
-const User = require('../models/User');
-const passport = require('../config/passport');
-const logger = require('../config/logger');
+const logger = require('../config/logger')
 
-exports.ensureAuthenticated = function(req, res, next) {
+exports.ensureAuthenticated = function (req, res, next) {
   if (req.isAuthenticated()) {
-    return next();
+    return next()
   }
-  res.redirect('/login');
-};
+  res.redirect('/login')
+}
 
-exports.googleCallback = function(req, res) {
-  logger.info('Successful authentication');
-  res.redirect('/secrets');
-};
+exports.googleCallback = function (req, res) {
+  logger.info('Successful authentication')
+  res.redirect('/secrets')
+}

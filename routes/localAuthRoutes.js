@@ -1,15 +1,16 @@
-const express = require('express');
-const router = express.Router();
-const localAuthController = require('../controllers/localAuthController');
+const express = require('express')
 
-router.get('/', function (req, res) {
-  res.render('home');
-});
+const router = express.Router()
+const localAuthController = require('../controllers/localAuthController')
 
-router.get('/register', localAuthController.registerForm);
-router.post('/register', localAuthController.register);
-router.get('/login', localAuthController.loginForm);
-router.post('/login', localAuthController.login);
-router.post('/logout', localAuthController.logout);
+router.get('/', (req, res) => {
+  res.render('home')
+})
 
-module.exports = router;
+router.get('/register', localAuthController.registerForm)
+router.post('/register', localAuthController.register)
+router.get('/login', localAuthController.loginForm)
+router.post('/login', localAuthController.login)
+router.post('/logout', localAuthController.logout)
+
+module.exports = router

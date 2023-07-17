@@ -1,85 +1,84 @@
-const User = require('../models/User');
-const passport = require('../config/passport');
-const logger = require('../config/logger');
+const User = require('../models/User')
+const passport = require('../config/passport')
+const logger = require('../config/logger')
 
-exports.registerForm = function(req, res) {
-  res.render('register');
-};
+exports.registerForm = function (req, res) {
+  res.render('register')
+}
 
-exports.register = async function(req, res) {
-  const { username, password } = req.body;
+exports.register = async function (req, res) {
+  const { username, password } = req.body
 
   // Input validation
   if (!username || !password) {
-    logger.error('Registry error: Username or password is missing');
-    res.redirect('/register');
-    return;
+    logger.error('Registry error: Username or password is missing')
+    res.redirect('/register')
+    return
   }
 
   try {
-    const existingUser = await User.findOne({ username: username });
+    const existingUser = await User.findOne({ username })
     if (existingUser) {
-      logger.error('User already exists');
-      res.redirect('/register');
-      return;
+      logger.error('User already exists')
+      res.redirect('/register')
+      return
     }
 
-    await User.register(new User({ username: username, active: false }), password);
-    logger.info('User registered successfully');
+    await User.register(new User({ username, active: false }), password)
+    logger.info('User registered successfully')
 
-    passport.authenticate('local')(req, res, function() {
-      res.redirect('/secrets');
-    });
-
+    passport.authenticate('local')(req, res, () => {
+      res.redirect('/secrets')
+    })
   } catch (error) {
-    logger.error('Error registering user:', error);
-    res.redirect('/register');
+    logger.error('Error registering user:', error)
+    res.redirect('/register')
   }
-};
+}
 
-exports.loginForm = function(req, res) {
-  res.render('login');
-};
+exports.loginForm = function (req, res) {
+  res.render('login')
+}
 
-exports.login = async function(req, res) {
-  const { username, password } = req.body;
+exports.login = async function (req, res) {
+  const { username, password } = req.body
 
   // Input validation
   if (!username || !password) {
-    logger.error('Login error: Username or password is missing');
-    res.status(401).redirect('/login');
-    return;
+    logger.error('Login error: Username or password is missing')
+    res.status(401).redirect('/login')
+    return
   }
 
   try {
     const user = new User({
-      username: username,
-      password: password
-    });
-  
-    req.login(user, function(err) {
-      if (err) {
-        logger.error('Error during login:', err);
-        res.status(401).redirect('/login');
-      } else {
-        passport.authenticate('local')(req, res, function() {
-          res.redirect('/secrets');
-        });
-      }
-    });
-  } catch (error) {
-    logger.error('Error during login:', error);
-    res.status(401).redirect('/login');
-  }
-};
+      username,
+      password
+    })
 
-exports.logout = function(req, res) {
-  req.logout(function(err) {
+    req.login(user, (err) => {
+      if (err) {
+        logger.error('Error during login:', err)
+        res.status(401).redirect('/login')
+      } else {
+        passport.authenticate('local')(req, res, () => {
+          res.redirect('/secrets')
+        })
+      }
+    })
+  } catch (error) {
+    logger.error('Error during login:', error)
+    res.status(401).redirect('/login')
+  }
+}
+
+exports.logout = function (req, res) {
+  req.logout((err) => {
     if (err) {
-      logger.error('logout failed', err) ;
+      logger.error('logout failed', err)
     } else {
-      logger.info('logout successful');
-      res.redirect('/');
+      logger.info('logout successful')
+      res.redirect('/')
     }
-  });
-};
+  })
+}

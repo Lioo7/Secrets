@@ -1,0 +1,24 @@
+{
+    "env": {
+      "browser": true,
+      "commonjs": true,
+      "es2021": true,
+      "jest": true,
+      "node": true   
+    },
+    "extends": [
+      "eslint:recommended",
+      "standard",
+      "plugin:node/recommended" // Use the plugin for Node.js-specific rules
+    ],
+    "parserOptions": {
+      "ecmaVersion": "latest"
+    },
+    "rules": {
+    },
+    "globals": {
+      // Define any custom global variables used in your project
+      "globalVariable": "readonly"
+    }
+  }
+  
