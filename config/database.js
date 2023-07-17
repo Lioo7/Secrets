@@ -12,7 +12,7 @@ async function connect(connectionString) {
     });
     isConnected = true;
     connection = mongoose.connection;
-    logger.info(`Connected to MongoDB): ${connectionString}`);
+    logger.info(`Connected to MongoDB: ${connectionString}`);
   } catch (error) {
     logger.error('Failed to connect to MongoDB:', error);
     throw error;

@@ -6,8 +6,8 @@ exports.registerForm = function(req, res) {
   res.render('register');
 };
 
-exports.register = function(req, res) {
-  logger.info('req.body:', req.body); 
+exports.register = async function(req, res) {
+  logger.info('req.body:', req.body);
   const { username, password } = req.body;
 
   // Input validation
@@ -17,17 +17,25 @@ exports.register = function(req, res) {
     return;
   }
 
-  User.register({ username: username, active: false }, password, function(err, user) {
-    if (err) {
-      logger.error('Error registering user:', err);
+  try {
+    const existingUser = await User.findOne({ username: username });
+    if (existingUser) {
+      logger.error('User already exists');
       res.redirect('/register');
-    } else {
-      logger.info('User registered successfully');
-      passport.authenticate('local')(req, res, function() {
-        res.redirect('/secrets');
-      });
+      return;
     }
-  });
+
+    await User.register(new User({ username: username, active: false }), password);
+    logger.info('User registered successfully');
+
+    passport.authenticate('local')(req, res, function() {
+      res.redirect('/secrets');
+    });
+
+  } catch (error) {
+    logger.error('Error registering user:', error);
+    res.redirect('/register');
+  }
 };
 
 exports.loginForm = function(req, res) {
@@ -61,12 +69,12 @@ exports.login = async function(req, res) {
 };
 
 exports.logout = function(req, res) {
- req.logout(function(err) {
-  if (err) {
-    logger.error('logout failed', err) ;
-  } else {
-    logger.info('logout successful');
-    res.redirect('/');
-  }
-});
+  req.logout(function(err) {
+    if (err) {
+      logger.error('logout failed', err) ;
+    } else {
+      logger.info('logout successful');
+      res.redirect('/');
+    }
+  });
 };
