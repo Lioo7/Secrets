@@ -52,13 +52,21 @@ describe('Routes', () => {
     })
 
     it('should handle registration errors', async () => {
-      logger.debug('Test: POST /register should handle registration errors')
+      logger.debug('Test: POST /register should handle registration errors (username is missing)')
       const response = await request(app)
         .post('/register')
         .send({ username: '', password: 'testpassword' })
 
-      expect(response.status).toBe(302) // Expecting a redirect status code
-      expect(response.header.location).toBe('/register') // Expecting redirection to the same route
+      expect(response.status).toBe(200) 
+    })
+
+    it('should handle registration errors', async () => {
+      logger.debug('Test: POST /register should handle registration errors (short passoword)')
+      const response = await request(app)
+        .post('/register')
+        .send({ username: 'testuser@gmail.com', password: '123456' })
+
+      expect(response.status).toBe(200) 
     })
   })
 

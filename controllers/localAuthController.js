@@ -1,40 +1,52 @@
+const { body, validationResult } = require('express-validator')
 const User = require('../models/User')
 const passport = require('../config/passport')
 const logger = require('../config/logger')
+
+// Validation middleware for user registration
+const validateRegistration = [
+  body('username').notEmpty().withMessage('Username is required'),
+  body('password').notEmpty().withMessage('Password is required').isLength({ min: 8 }).withMessage('Password must be at least 8 characters long')
+]
 
 exports.registerForm = function (req, res) {
   res.render('register')
 }
 
-exports.register = async function (req, res) {
-  const { username, password } = req.body
+exports.register = [
+  validateRegistration,
 
-  // Input validation
-  if (!username || !password) {
-    logger.error('Registry error: Username or password is missing')
-    res.redirect('/register')
-    return
-  }
-
-  try {
-    const existingUser = await User.findOne({ username })
-    if (existingUser) {
-      logger.error('User already exists')
-      res.redirect('/register')
-      return
+  async function (req, res) {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      const errorMSG = 'Registry error: Username or password is missing'
+      logger.error(errorMSG)
+      // Pass the 'errors' variable to the view
+      return res.render('register', { errors: errors.array() })
     }
 
-    await User.register(new User({ username, active: false }), password)
-    logger.info('User registered successfully')
+    const { username, password } = req.body
 
-    passport.authenticate('local')(req, res, () => {
-      res.redirect('/secrets')
-    })
-  } catch (error) {
-    logger.error('Error registering user:', error)
-    res.redirect('/register')
+    try {
+      const existingUser = await User.findOne({ username })
+      if (existingUser) {
+        logger.error('User already exists')
+        res.redirect('/register')
+        return
+      }
+
+      await User.register(new User({ username, active: false }), password)
+      logger.info('User registered successfully')
+
+      passport.authenticate('local')(req, res, () => {
+        res.redirect('/secrets')
+      })
+    } catch (error) {
+      logger.error('Error registering user:', error)
+      res.redirect('/register')
+    }
   }
-}
+]
 
 exports.loginForm = function (req, res) {
   res.render('login')
