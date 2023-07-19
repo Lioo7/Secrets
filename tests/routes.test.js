@@ -57,7 +57,7 @@ describe('Routes', () => {
         .post('/register')
         .send({ username: '', password: 'testpassword' })
 
-      expect(response.status).toBe(200) 
+      expect(response.status).toBe(200)
     })
 
     it('should handle registration errors', async () => {
@@ -66,7 +66,7 @@ describe('Routes', () => {
         .post('/register')
         .send({ username: 'testuser@gmail.com', password: '123456' })
 
-      expect(response.status).toBe(200) 
+      expect(response.status).toBe(200)
     })
   })
 

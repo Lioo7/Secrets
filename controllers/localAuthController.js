@@ -19,7 +19,7 @@ exports.register = [
   async function (req, res) {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
-      const errorMSG = 'Registry error: Username or password is missing'
+      const errorMSG = 'Registry error: Username or password is invalid'
       logger.error(errorMSG)
       // Pass the 'errors' variable to the view
       return res.render('register', { errors: errors.array() })
@@ -52,37 +52,42 @@ exports.loginForm = function (req, res) {
   res.render('login')
 }
 
-exports.login = async function (req, res) {
-  const { username, password } = req.body
+exports.login = [
+  validateRegistration,
 
-  // Input validation
-  if (!username || !password) {
-    logger.error('Login error: Username or password is missing')
-    res.status(401).redirect('/login')
-    return
+  async function (req, res) {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      const errorMSG = 'Login error: Username or password is invalid'
+      logger.error(errorMSG)
+      // Pass the 'errors' variable to the view
+      return res.render('login', { errors: errors.array() })
+    }
+
+    const { username, password } = req.body
+
+    try {
+      const user = new User({
+        username,
+        password
+      })
+
+      req.login(user, (err) => {
+        if (err) {
+          logger.error('Error during login:', err)
+          res.status(401).redirect('/login')
+        } else {
+          passport.authenticate('local')(req, res, () => {
+            res.redirect('/secrets')
+          })
+        }
+      })
+    } catch (error) {
+      logger.error('Error during login:', error)
+      res.status(401).redirect('/login')
+    }
   }
-
-  try {
-    const user = new User({
-      username,
-      password
-    })
-
-    req.login(user, (err) => {
-      if (err) {
-        logger.error('Error during login:', err)
-        res.status(401).redirect('/login')
-      } else {
-        passport.authenticate('local')(req, res, () => {
-          res.redirect('/secrets')
-        })
-      }
-    })
-  } catch (error) {
-    logger.error('Error during login:', error)
-    res.status(401).redirect('/login')
-  }
-}
+]
 
 exports.logout = function (req, res) {
   req.logout((err) => {
