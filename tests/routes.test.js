@@ -51,7 +51,7 @@ describe('Routes', () => {
       expect(response.header.location).toBe('/secrets')
     })
 
-    it('should handle registration errors', async () => {
+    it('should handle registration errors (username is missing)', async () => {
       logger.debug('Test: POST /register should handle registration errors (username is missing)')
       const response = await request(app)
         .post('/register')
@@ -60,11 +60,31 @@ describe('Routes', () => {
       expect(response.status).toBe(200)
     })
 
-    it('should handle registration errors', async () => {
+    it('should handle registration errors (short passoword)', async () => {
       logger.debug('Test: POST /register should handle registration errors (short passoword)')
       const response = await request(app)
         .post('/register')
         .send({ username: 'testuser@gmail.com', password: '123456' })
+
+      expect(response.status).toBe(200)
+    })
+
+    it('should handle registration errors (duplicate username)', async () => {
+      logger.debug('Test: POST /register should handle registration errors (duplicate username)')
+      const response = await request(app)
+        .post('/register')
+        .send({ username: 'testuser@gmail.com', password: 'testpassword' })
+
+      expect(response.status).toBe(302)
+      expect(response.header.location).toBe('/register')
+    })
+
+    it('should handle registration errors (error during registration)', async () => {
+      logger.debug('Test: POST /register should handle registration errors (error during registration)')
+      // Trigger an error by providing an invalid password length (less than 8 characters)
+      const response = await request(app)
+        .post('/register')
+        .send({ username: 'testuser@gmail.com', password: '12345' })
 
       expect(response.status).toBe(200)
     })
@@ -90,6 +110,13 @@ describe('Routes', () => {
       expect(response.header.location).toBe('/secrets')
     })
 
+    it('should handle login errors with missing credentials', async () => {
+      logger.debug('Test: POST /login should handle login errors with missing credentials')
+      const response = await request(app).post('/login').send({})
+
+      expect(response.status).toBe(200)
+    })
+
     it('should handle login errors with incorrect credentials', async () => {
       logger.debug('Test: POST /login should handle login errors with incorrect credentials')
       const response = await request(app)
@@ -98,12 +125,31 @@ describe('Routes', () => {
 
       expect(response.status).toBe(401) // Expecting an unauthorized status code
     })
+
+    it('should handle login errors (error during login)', async () => {
+      logger.debug('Test: POST /login should handle login errors (error during login)')
+      // Intentionally trigger an error by passing a non-existing user
+      const response = await request(app)
+        .post('/login')
+        .send({ username: 'nonexistinguser@gmail.com', password: 'testpassword' })
+
+      expect(response.status).toBe(401)
+    })
   })
 
   describe('POST /logout', () => {
     it('should log out a user', async () => {
       logger.debug('Test: POST /logout should log out a user')
       const response = await request(app).post('/logout')
+      expect(response.status).toBe(302)
+      expect(response.header.location).toBe('/')
+    })
+
+    it('should handle logout errors (error during logout)', async () => {
+      logger.debug('Test: POST /logout should handle logout errors (error during logout)')
+      // Intentionally trigger an error by passing an error object to the logout function
+      const response = await request(app).post('/logout').send({ error: 'logout error' })
+
       expect(response.status).toBe(302)
       expect(response.header.location).toBe('/')
     })
