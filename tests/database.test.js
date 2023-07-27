@@ -82,7 +82,7 @@ describe('database.js', () => {
     // Mock the connection.dropDatabase function to throw an error
     mongoose.connection.dropDatabase.mockRejectedValue(new Error('Failed to drop database'))
 
-    // Use a try-catch block to catch the error thrown by the cleanupDatabase functions
+    // Use a try-catch block to catch the error thrown by the cleanupDatabase function
     try {
       await database.cleanupDatabase()
     } catch (error) {
