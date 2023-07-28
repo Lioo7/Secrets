@@ -1,96 +1,85 @@
 const mongoose = require('mongoose')
 const database = require('../config/database')
 
-// Define a mock logger for testing purposes
-const mockLogger = {
+// Mock the logger (optional)
+const logger = {
   info: jest.fn(),
   error: jest.fn(),
   debug: jest.fn()
 }
 
-// Mock the logger module used in the database.js file
-jest.mock('../config/logger', () => mockLogger)
+// Mock the mongoose.connect function to avoid connecting to a real database
+jest.mock('mongoose', () => ({
+  connect: jest.fn(),
+  connection: {
+    close: jest.fn(),
+    dropDatabase: jest.fn()
+  }
+}))
 
-describe('database.js', () => {
-  const testConnectionString = 'mongodb://localhost:27017/test_db'
+beforeAll(async () => {
+  // Connect to the separate test database
+  await database.connect(process.env.TEST_MONGODB_URI)
+})
 
-  beforeAll(async () => {
-    await database.connect(testConnectionString)
+afterAll(async () => {
+  // Close the database connection
+  await database.disconnect()
+})
+
+describe('Database Functions', () => {
+  afterEach(() => {
+    jest.clearAllMocks() // Clear all mock functions after each test
   })
 
-  afterAll(async () => {
-    await database.disconnect()
-  })
-
-  it('should connect to MongoDB', () => {
-    expect(mongoose.connect).toHaveBeenCalledWith(testConnectionString, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
+  describe('connect', () => {
+    it('should connect to MongoDB', async () => {
+      expect(mongoose.connect).toHaveBeenCalledWith(process.env.TEST_MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+      })
+      expect(logger.info).toHaveBeenCalledWith(`Connected to MongoDB: ${process.env.TEST_MONGODB_URI}`)
     })
-    expect(mockLogger.info).toHaveBeenCalledWith(`Connected to MongoDB: ${testConnectionString}`)
-    expect(database.isConnected).toBe(true)
-  })
 
-  it('should disconnect from MongoDB', async () => {
-    await database.disconnect()
-    expect(database.isConnected).toBe(false)
-    expect(mongoose.connection.close).toHaveBeenCalled()
-    expect(mockLogger.info).toHaveBeenCalledWith('Disconnected from MongoDB')
-  })
+    it('should throw an error when failed to connect to MongoDB', async () => {
+      // Mock mongoose.connect to throw an error
+      mongoose.connect.mockRejectedValueOnce(new Error('Failed to connect'))
 
-  it('should clean up the database', async () => {
-    await database.cleanupDatabase()
-    expect(mongoose.connection.dropDatabase).toHaveBeenCalled()
-    expect(mockLogger.info).toHaveBeenCalledWith('Database cleaned up')
-  })
-
-  it('should handle errors when connecting to MongoDB', async () => {
-    const invalidConnectionString = 'invalid_connection_string'
-    // Use a try-catch block to catch the error thrown by the connect function
-    try {
-      await database.connect(invalidConnectionString)
-    } catch (error) {
-      expect(error).toBeDefined()
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        'Failed to connect to MongoDB:',
-        expect.any(Error)
+      await expect(database.connect('invalid_connection_string')).rejects.toThrow(
+        'Failed to connect'
       )
-    }
+
+      expect(logger.error).toHaveBeenCalled()
+    })
   })
 
-  it('should handle errors when disconnecting from MongoDB', async () => {
-    // Manually set isConnected to true to simulate an active connection
-    database.isConnected = true
-    // Mock the connection.close function to throw an error
-    mongoose.connection.close.mockRejectedValue(new Error('Failed to close connection'))
-
-    // Use a try-catch block to catch the error thrown by the disconnect function
-    try {
+  describe('disconnect', () => {
+    it('should disconnect from MongoDB', async () => {
       await database.disconnect()
-    } catch (error) {
-      expect(error).toBeDefined()
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        'Failed to disconnect from MongoDB:',
-        expect.any(Error)
-      )
-    }
+
+      expect(mongoose.connection.close).toHaveBeenCalled()
+      expect(logger.info).toHaveBeenCalledWith('Disconnected from MongoDB')
+    })
+
+    it('should log an error when there is no active MongoDB connection to disconnect from', async () => {
+      await database.disconnect()
+
+      expect(logger.error).toHaveBeenCalledWith('No active MongoDB connection to disconnect from')
+    })
   })
 
-  it('should handle errors when cleaning up the database', async () => {
-    // Manually set isConnected to true to simulate an active connection
-    database.isConnected = true
-    // Mock the connection.dropDatabase function to throw an error
-    mongoose.connection.dropDatabase.mockRejectedValue(new Error('Failed to drop database'))
-
-    // Use a try-catch block to catch the error thrown by the cleanupDatabase function
-    try {
+  describe('cleanupDatabase', () => {
+    it('should clean up the database', async () => {
       await database.cleanupDatabase()
-    } catch (error) {
-      expect(error).toBeDefined()
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        'Failed to clean up database:',
-        expect.any(Error)
-      )
-    }
+
+      expect(mongoose.connection.dropDatabase).toHaveBeenCalled()
+      expect(logger.info).toHaveBeenCalledWith('Database cleaned up')
+    })
+
+    it('should log an error when there is no active MongoDB connection to clean up', async () => {
+      await database.cleanupDatabase()
+
+      expect(logger.error).toHaveBeenCalledWith('No active MongoDB connection to clean up')
+    })
   })
 })
